@@ -4,47 +4,53 @@ import { useEffect, useState, ChangeEvent, FormEvent } from "react";
 import { Button } from "@repo/ui/button";
 
 const API_HOST = process.env.NEXT_PUBLIC_API_HOST || "http://localhost:3001";
+const verifyEmailFormatRegex = new RegExp(
+  /^(?:[a-zA-Z0-9_'^&+/=?`{|}~.-]+)@(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/
+);
 
 export default function Web() {
-  const [name, setName] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
   const [response, setResponse] = useState<{ message: string } | null>(null);
   const [error, setError] = useState<string | undefined>();
 
   useEffect(() => {
     setResponse(null);
     setError(undefined);
-  }, [name]);
+  }, [email]);
 
   const onChange = (e: ChangeEvent<HTMLInputElement>) =>
-    setName(e.target.value);
+    setEmail(e.target.value);
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
+    if (!verifyEmailFormatRegex.test(email)) {
+      setError("Invalid email format");
+      return;
+    }
     try {
-      const result = await fetch(`${API_HOST}/message/${name}`);
+      const result = await fetch(`${API_HOST}/verify/${email}`);
       const response = await result.json();
       setResponse(response);
     } catch (err) {
-      console.error(err);
       setError("Unable to fetch response");
     }
   };
 
   const onReset = () => {
-    setName("");
+    setEmail("");
   };
 
   return (
     <div>
-      <h1>Web</h1>
+      <h1>Verify Email</h1>
       <form onSubmit={onSubmit}>
-        <label htmlFor="name">Name </label>
+        <label htmlFor="name">Email </label>
         <input
           type="text"
           name="name"
           id="name"
-          value={name}
+          value={email}
           onChange={onChange}
         ></input>
         <Button type="submit">Submit</Button>
@@ -57,8 +63,8 @@ export default function Web() {
       )}
       {response && (
         <div>
-          <h3>Greeting</h3>
-          <p>{response.message}</p>
+          <h3>Verify result</h3>
+          <pre>{JSON.stringify(response, null, 2)}</pre>
           <Button onClick={onReset}>Reset</Button>
         </div>
       )}
